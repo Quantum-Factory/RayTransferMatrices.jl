@@ -91,7 +91,9 @@ Return the waist radius of a beam at its current location.
 $(SIGNATURES)
 
 """
-spotsize(Γ::Beam) = /(-Γ.λ, π*Γ.n*imag(1/Γ.q)) |> sqrt
+waistradius(Γ::Beam) = /(-Γ.λ, π*Γ.n*imag(1/Γ.q)) |> sqrt
+
+@deprecate spotsize(beam) waistradius(beam)
 
 """
 

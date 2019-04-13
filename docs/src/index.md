@@ -199,8 +199,8 @@ transform
 Beam
 beamtrace
 discretize
+waistradius
 waistradiusfunc
-spotsize
 location
 ```
 
