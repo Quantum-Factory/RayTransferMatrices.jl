@@ -11,12 +11,19 @@ The following introduction to the package assumes familiarity with the ABCD form
 
 # Usage
 
+!!! note
+    This section is outdated:
+    The described methods work but some of them produce
+    deprecation warnings (that mention the future syntax
+    with keyword arguments replacing positional arguments
+    for more clarity and less potential for error).
+
 ## Installation
 This package is not yet registered.  It can be installed in Julia with the following:
 ```julia
 Pkg.clone("git://github.com/ngedwin98/ABCDBeamTrace.jl.git")
 ```
-The code currently requires Julia `v0.6`.
+The code currently requires Julia `v1.0` or higher. It has been tested with `v1.1`.
 
 ## Optical elements
 This section discusses how we represent the ABCD model of optical elements and how to access their standard representation as numerical ray transfer matrices.
@@ -33,32 +40,74 @@ There are some additional optical elements which are physically distinct but whi
 
 ### Optical systems
 An optical system in the ABCD formalism is a cascade of optical elements, represented in this package as `Vector{<:Element}`.  For example, to construct a [Keplerian 2x beam expander](https://www.edmundoptics.com/resources/application-notes/lasers/beam-expanders/) with objective focal length represented by `f::Real`, we can use
-```julia
-expander_2x = [ThinLens(f), FreeSpace(3f), ThinLens(2f)]
+```jldoctest usage
+using ABCDBeamTrace
+f=125e-3
+expander_2x = [ThinLens(f=f), FreeSpace(3f), ThinLens(f=2f)]
+
+# output
+
+3-element Array{ABCDBeamTrace.Element,1}:
+ ThinLens(0.125, 0)
+ FreeSpace(0.375)
+ ThinLens(0.25, 0)
 ```
-This means that we can also compose two optical systems using vector concatenations.  For example, given any length represented by `L::Real`, the following effectively creates a 1-to-1 beam expander with four lenses:
-```julia
+
+This means that we can also compose two optical systems using vector
+concatenations.  For example, the following continuation of the
+example above effectively creates a 1-to-1 beam expander with four
+lenses:
+
+```jldoctest usage
+L = 1000e-3
 system = [expander_2x; FreeSpace(L); reverse(expander_2x)]
+
+# output
+
+7-element Array{ABCDBeamTrace.Element,1}:
+ ThinLens(0.125, 0)
+ FreeSpace(0.375)
+ ThinLens(0.25, 0)
+ FreeSpace(1.0)
+ ThinLens(0.25, 0)
+ FreeSpace(0.375)
+ ThinLens(0.125, 0)
 ```
-Note the use of `vcat` in composing systems together.
+
+Note the implicit use of `vcat` (via the semicolon notation) in
+composing systems together.
 
 ### Ray transfer (ABCD) matrices
 The usual ABCD formalism for calculations involve the multiplication of 2x2 matrices, as discussed in the references above. To facilitate this formalism, each element has a well-defined matrix, which is accessed by calling `RTM(e::Element)`.  For example, `RTM(ThinLens(100)) == [1 0 ; -1/100 1]` evaluates as true.  Dot syntax for broadcasting can be used to create a corresponding vector of matrices, and the corresponding elements can be multiplied up, as in
-```julia
+```jldoctest usage
 # Total ABCD matrix for above 4-lens system
-system_RTM = reduce(*, RTM.(system))
+system_RTM = RTM(system)
+
+# output
+
+2×2 Array{Float64,2}:
+ 1.0  -0.125
+ 0.0   1.0
 ```
 
 ### Sagittal and tangential elements
 In the ABCD formalism, optical components that can have a non-zero tilt relative to the optical axis (i.e., with a nonzero field `θ`) bifurcate into two distinct elements, acting differently on the sagittal and tangential components of the ray or Gaussian beam.  To represent this dual behavior, composite `Element` types called `Tan` and `Sag` wrap the fundamental `Element` types and dispatch differently on `RTM` in order to produce the respective ray transfer matrices for the tangential and sagittal components.
 
 For example, suppose the above beam expander were misaligned with a tilt angle represented by `θ::Real`.  We would represent the optical system as
-```julia
-system = [ThinLens(f,θ), FreeSpace(3f), ThinLens(2f,θ)] # Component-agnostic description of system
-system_tan = Tan.(system) # Elements as seen by tangential component
-system_sag = Sag.(system) # Elements as seen by sagittal component
-system_tan_RTM = reduce(*, RTM.(system_tan)) # Total matrix in the tangential component
-system_sag_RTM = reduce(*, RTM.(system_sag)) # Total matrix in the sagittal component
+```jldoctest usage
+f = 125e-3 # focal length of 125mm in SI base units (m)
+θ = 1.0 * π/180 # one degree of misalignment in radians
+# Plane-agnostic description of system
+system = [ThinLens(f=f,aoi=θ), FreeSpace(3f), ThinLens(f=2f,aoi=θ)]
+system_tan = Tan(system) # Elements as seen by tangential component
+system_sag = Sag(system) # Elements as seen by sagittal component
+system_tan_RTM = RTM(system_tan) # Total matrix in the tangential component
+system_sag_RTM = RTM(system_sag) # Total matrix in the sagittal component
+system_tan_RTM, system_sag_RTM
+
+# output
+
+([-0.500228 0.375; 0.00182821 -2.00046], [-0.499772 0.375; -0.00182738 -1.99954])
 ```
 
 **Note**: If no calls are made to either `Tan` and `Sag` (as in the first line above), the `θ` field (if present) confers *no effect*; in this case, `RTM` returns the ray transfer matrix as if we set `θ=0`.  Also, note that `FreeSpace` does not wrap into these composite objects: `Tan(e::FreeSpace) = Sag(e::FreeSpace) = e`.  (This latter behavior could be changed, should there be a reason for it to be otherwise...)
@@ -101,11 +150,9 @@ following:
 using ABCDBeamTrace, Plots#, Colors
 f = 10e-3 # focal length of 10 mm in SI base units (m)
 L = 20e-3 # distance of 20 mm (SI) betweeen sub systems
-expander_2x = [ThinLens(f), FreeSpace(3f), ThinLens(2f)]
+expander_2x = [ThinLens(f=f), FreeSpace(3f), ThinLens(f=2f)]
 system = [expander_2x; FreeSpace(L); reverse(expander_2x)]
-λ = 532e-9 # wavelength of 532nm
-w0 = 1e-3 # beam waist radius of 1mm at entrance of system
-beam = Beam(λ, w0)
+beam = Beam(λ = 532e-9, w0 = 1e-3)
 plot(system, beam, size = (800, 150))
 savefig("plots-01.svg"); nothing # hide
 ```
@@ -126,16 +173,17 @@ the focus of a lens and exaggerates the beam width:
 using ABCDBeamTrace, Plots#, Colors
 f = 50e-3 # focal length of 50 mm in SI base units (m)
 L = 1000e-3 # propagation length of 1 m (from the initial waist pos.)
-w0 = 1e-3 # 1mm waist radius (where the intensity drops to 1/e^2 * Imax)
-system = [FreeSpace(L), ThinLens(f), FreeSpace(0.98f), FreeSpace(0.04f)]
+system = [
+    FreeSpace(L), ThinLens(f=f), FreeSpace(0.98f), FreeSpace(0.04f)
+]
 plot(
     xlims = (L+0.98f, L+1.02f), # custom range for x axis
     ylims = (-20.0e-6, 20.0e-6), # custom range for y axis
     size = (800, 500)
 )
-plot!(system, Beam(405e-9, w0), label="405 nm")
-plot!(system, Beam(532e-9, w0), label="532 nm")
-plot!(system, Beam(638e-9, w0), label="638 nm")
+plot!(system, Beam(λ = 405e-9, w0 = 1e-3), label="405 nm")
+plot!(system, Beam(λ = 532e-9, w0 = 1e-3), label="532 nm")
+plot!(system, Beam(λ = 638e-9, w0 = 1e-3), label="638 nm")
 plot!(
     xlabel = "Distance along Beam Axis [m]",
     ylabel = "Beam 1/e^2 Extent [m]",
@@ -175,6 +223,7 @@ parallel) one via [`Tan`](@ref).
 
 ```@docs
 Element
+FreeSpace
 Interface
 ThinLens
 Mirror

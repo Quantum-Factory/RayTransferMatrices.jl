@@ -10,7 +10,10 @@ struct Beam
     λ::Real; z::Real; n::Real
     x::Real; k::Real; q::Complex
 end
-Beam(λ::Real, w0::Real, n0::Real=1) = Beam(λ, 0, n0, 0, 0, 1im*π*n0*w0^2/λ)
+Beam(; λ::Real, w0::Real, n::Real = 1) =
+    Beam(λ, 0, n, 0, 0, 1im * π * n * w0^2 / λ)
+@deprecate Beam(λ_beam, w0_beam) Beam(λ=λ_beam, w0=w0_beam)
+@deprecate Beam(λ_beam, w0_beam, n0) Beam(λ=λ_beam, w0=w0_beam, n=n0)
 
 """
 
