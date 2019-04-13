@@ -20,16 +20,16 @@ end
     # chance of approximating minimum waist radii decently
     ds = discretize(data.system, 200)
     N = length(ds) + 1
-    Tw = typeof(float(spotsize(data.beam)))
+    Tw = typeof(float(waistradius(data.beam)))
     Tz = typeof(float(location(data.beam)))
     ws = Vector{Tw}(undef, N)
     zs = Vector{Tz}(undef, N)
-    ws[1] = spotsize(data.beam)
+    ws[1] = waistradius(data.beam)
     zs[1] = location(data.beam)
     beam = data.beam
     for i = 1:length(ds)
         beam = transform(ds[i], beam)
-        ws[i+1] = spotsize(beam)
+        ws[i+1] = waistradius(beam)
         zs[i+1] = location(beam)
     end
     xs, ys = vcat(zs, reverse(zs)), vcat(ws, (-1.0) .* reverse(ws))

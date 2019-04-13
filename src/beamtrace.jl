@@ -145,7 +145,7 @@ function waistradiusfunc(elements, beam::Beam; outside=nothing)
         # add the effect of a FreeSpace element to reach the requested
         # beam position z
         beam = transform(FreeSpace(z - beams[i].z), beams[i])
-        return spotsize(beam)
+        return waistradius(beam)
     end
 end
 
