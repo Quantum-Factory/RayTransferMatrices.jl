@@ -63,7 +63,7 @@ end
 
 """
 
-Propagate a [`Beam`] through a system.
+Propagate a [`Beam`](@ref) through a system.
 
 $(SIGNATURES)
 
@@ -73,7 +73,7 @@ unpropagated beam, and the beams propagated through the first one, the
 first two, etc., and, finally, all elements of which the system
 consists.
 
-Note that the `Beam` is the second argument.
+Note that the [`Beam`](@ref) is the second argument.
 
 """
 function beamtrace(elems::Vector{<:Element}, Γ0::Beam)
