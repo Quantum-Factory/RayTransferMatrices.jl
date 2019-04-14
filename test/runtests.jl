@@ -21,8 +21,8 @@ end
     @test length(discretize(expander_2x,10)) == 12
 end
 
-@testset "waistradiusfunc" begin
-    @test waistradiusfunc(expander_2x, beam) isa Function
-    @test waistradiusfunc(expander_2x, beam)(0) == w0
-    @test waistradiusfunc(expander_2x, beam)(3f) ≈ 2w0 rtol=0.01
+@testset "spotradiusfunc" begin
+    @test spotradiusfunc(expander_2x, beam) isa Function
+    @test spotradiusfunc(expander_2x, beam)(0) == w0
+    @test spotradiusfunc(expander_2x, beam)(3f) ≈ 2w0 rtol=0.01
 end
