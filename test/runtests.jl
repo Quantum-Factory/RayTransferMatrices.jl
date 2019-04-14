@@ -31,7 +31,7 @@ end
 @testset "planes" begin
     # system with no astigmatism: sagittal and parallel plane should
     # be identical (within numerical error)
-    @test RTM(Sag(system)) ≈ RTM(Tan(system))
+    @test Matrix(Sag(system)) ≈ Matrix(Tan(system))
 end
 
 @testset "unitful" begin

@@ -115,7 +115,7 @@ function transform(system::Vector{<:Element}, Γ::Beam)
     return Γ
 end
 transform(e::Element, Γ::Beam) =
-    transform(RTM(e), Γ; dz = dz(e), η = η(e))
+    transform(Matrix(e), Γ; dz = dz(e), η = η(e))
 transform(m::Matrix, Γ::Beam; dz = zero(m[1,1]), η = one(m[1,1])) =
     Beam(Γ.λ, Γ.z+dz, Γ.n/η, (m*[Γ.x,Γ.k])..., /((m*[Γ.q,1])...))
 # the above is rather succinct, hence here an alternative
