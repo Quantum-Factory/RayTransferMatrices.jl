@@ -154,3 +154,52 @@ function Base.Matrix(e::Sag{Interface{T,N},T,N}) where {T,N}
 end
 Base.Matrix(elements::Vector{<:Element}) = prod(Matrix.(elements))
 @deprecate RTM(element) Matrix(element)
+
+"""
+
+Return `η`, the ratio of optical densities (aka optical indices).
+
+$(SIGNATURES)
+
+The next optical density is in the numerator and the previous optical
+density is in the denominator.
+
+"""
+η(e::Interface) = e.η
+η(e::Union{Tan,Sag}) = η(e.e)
+η(e::Element) = 1
+
+"""
+
+Return the effective beam propagation length of an element.
+
+$(SIGNATURES)
+
+The distance is measured along the beam's direction of propagation
+(beam axis).
+
+!!! note "To Do"
+     The effective propagation length may deviate from the physical
+     distance along the beam axis if the optical density deviates from
+     unity. Currently, this is not taken into account. Do take it into
+     account.
+
+"""
+dz(e::FreeSpace) = e.L
+dz(e::Union{Tan,Sag}) = dz(e.e)
+dz(e::Element{L,N}) where {L,N} = zero(L)
+
+"""
+
+Discretize a system by splitting each [`Element`](@ref) that occupies
+space.
+
+$(SIGNATURES)
+
+Each element that occupies space is split into `N` appropriately
+shortened versions of itself. A vector of elements is returned.
+
+"""
+discretize(e::FreeSpace, N::Int) = fill(FreeSpace(e.L/N), N)
+discretize(e::Element, N::Int) = e
+discretize(els::Vector{<:Element}, N::Int) = vcat(discretize.(els,N)...)

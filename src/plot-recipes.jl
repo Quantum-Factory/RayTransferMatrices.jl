@@ -1,14 +1,14 @@
 # plot recipes, see https://docs.juliaplots.org/latest/recipes/ and
 # https://github.com/JuliaPlots/RecipesBase.jl
 
-mutable struct WithBeam
+mutable struct WithGaussianBeam
     system::Vector{<:Element}
-    beam::Beam
+    beam::GaussianBeam
     unit::Number
 end
 
-# type recipe, e.g. for `plot(WithBeam(system, beam))`
-@recipe f(::Type{WithBeam}, data::WithBeam) = begin
+# type recipe, e.g. for `plot(WithGaussianBeam(system, beam))`
+@recipe f(::Type{WithGaussianBeam}, data::WithGaussianBeam) = begin
     seriestype := :shape
     linecolor --> color(data.beam.λ)
     fillcolor --> color(data.beam.λ)
@@ -92,10 +92,12 @@ color(λ::Unitful.Length) =
     color(Unitful.uconvert(Unitful.NoUnits, λ / Unitful.m))
 
 # user recipe, e.g. for `plot(system, beam)`
-@recipe f(system::Vector{<:Element}, beam::Beam) = WithBeam(
-    system,
-    beam,
-    (
-        Unitful.dimension(beam.z) == Unitful.dimension(Unitful.m)
-    ) ? 1Unitful.m : 1
-)
+@recipe f(system::Vector{<:Element}, beam::GaussianBeam) =
+    WithGaussianBeam(
+        system,
+        beam,
+        (
+            Unitful.dimension(location(beam)) ==
+            Unitful.dimension(Unitful.m)
+        ) ? 1Unitful.m : 1
+    )
