@@ -165,15 +165,21 @@ Consistent with the ABCD formalism, we provide a description the state of a Gaus
 
 All optical elements modify `x`, `k`, and `q`, as prescribed by the ABCD formalism.  The parameter `z` is only modified by `FreeSpace` (via addition by the field `L`), while the parameter `n` is only modified by `Interface` (via division by the field `η`).  The wavelength `λ` does not play a direct role in the (scale-free) beam propagation; it is only used for spot size calculations.
 
-A useful constructor method is `Beam(λ::Real,w0::Real,n0::Real=1)`, which represents a beam state with position represented by `z=0` in refractive index represented by `n0` and at a focus with 1/e² waist represented by `w0` (so that the Gaussian beam parameter is imaginary), provided its wavelength `λ`; furthermore, the ray position and slope are represented by `x=0` and `k=0`, respectively.
+A useful constructor method is [`GaussianBeam`](@ref) with keyword
+arguments `λ`, `w0`, `n`, `z0`. It represents a beam state with
+position represented by `z=-z0` in refractive index represented by `n`
+and at a focus with 1/e² waist represented by `w0` (so that the
+Gaussian beam parameter is imaginary for `z0=0` which is the default),
+provided its wavelength `λ`; furthermore, the ray position and slope
+are represented by `x=0` and `k=0`, respectively.
 
 ### Beam transformation by an element
-We think of the optical elements as effecting a transformation on the beam state.  If we have an optical element represented by `e::Element` and a beam state `Γ::Beam`, there is a non-exported function `transform(e::Element,Γ::Beam)`, which returns a new instance of `Beam` with fields representing the beam state after propagation through that element.  This function is unexported because it should rarely see utility given the beamtracing functionality described in the next subsection.
+We think of the optical elements as effecting a transformation on the beam state.  If we have an optical element represented by `e::Element` and a beam state `Γ::GaussianBeam`, there is a non-exported function `transform(e::Element,Γ::GaussianBeam)`, which returns a new instance of `GaussianBeam` with fields representing the beam state after propagation through that element.  This function is unexported because it should rarely see utility given the beamtracing functionality described in the next subsection.
 
-**Note**: It is very natural to use Julia's functor mechanism to represent the transformation, via some definition like `(e::Element)(Γ::Beam)` which behaves identically to the currently-implemented `transform(e,Γ)`.  Unfortunately, this is not possible at the moment due to https://github.com/JuliaLang/julia/issues/14919.  While an obvious workaround is to define the transformation for each concrete subtype, this is inelegant enough to be not worth it.
+**Note**: It is very natural to use Julia's functor mechanism to represent the transformation, via some definition like `(e::Element)(Γ::GaussianBeam)` which behaves identically to the currently-implemented `transform(e,Γ)`.  Unfortunately, this is not possible at the moment due to https://github.com/JuliaLang/julia/issues/14919.  While an obvious workaround is to define the transformation for each concrete subtype, this is inelegant enough to be not worth it.
 
 ### Beam and ray tracing
-Perhaps the most useful part of this whole package is the ability to trace the beam state by providing an initial beam state and propagating it forwards using the optical elements of a given system, recording the state after each element.  For an optical system represented by `elems::Vector{<:Element}` and an initial beam state represented by `Γ0::Beam`, `beamtrace(elems::Vector{<:Element},Γ0::Beam)` returns an instance of `Vector{Beam}` (of length given by `length(elems)+1`) where the first item is `Γ0`, and each subsequent item is the result of applying `transform` to the previous item using the corresponding item of `elems`.
+Perhaps the most useful part of this whole package is the ability to trace the beam state by providing an initial beam state and propagating it forwards using the optical elements of a given system, recording the state after each element.  For an optical system represented by `elems::Vector{<:Element}` and an initial beam state represented by `Γ0::GaussianBeam`, `beamtrace(elems::Vector{<:Element},Γ0::GaussianBeam)` returns an instance of `Vector{GaussianBeam}` (of length given by `length(elems)+1`) where the first item is `Γ0`, and each subsequent item is the result of applying `transform` to the previous item using the corresponding item of `elems`.
 
 # Examples
 
@@ -197,7 +203,7 @@ f = 125mm
 L = 50cm
 expander_2x = [ThinLens(f=f), FreeSpace(3f), ThinLens(f=2f)]
 system = [expander_2x; FreeSpace(L); reverse(expander_2x)]
-inputbeam = Beam(λ = 532nm, w0 = 500µm)
+inputbeam = GaussianBeam(λ = 532nm, w0 = 500µm)
 outputbeam = transform(system, inputbeam)
 uconvert(µm, spotradius(outputbeam))
 
@@ -208,7 +214,7 @@ uconvert(µm, spotradius(outputbeam))
 
 ## Plotting
 
-To plot a system (a vector of [`Element`](@ref)) with a [`Beam`](@ref)
+To plot a system (a vector of [`Element`](@ref)) with a [`GaussianBeam`](@ref)
 `beam`, pass both as arguments to `Plots.plot` of the plot
 meta-package [Plots](https://github.com/JuliaPlots/Plots.jl). For
 exampe, to plot a laser beam's ``1/e^2`` full diameter, use the
@@ -220,7 +226,7 @@ f = 10e-3 # focal length of 10 mm in SI base units (m)
 L = 20e-3 # distance of 20 mm (SI) betweeen sub systems
 expander_2x = [ThinLens(f=f), FreeSpace(3f), ThinLens(f=2f)]
 system = [expander_2x; FreeSpace(L); reverse(expander_2x)]
-beam = Beam(λ = 532e-9, w0 = 1e-3)
+beam = GaussianBeam(λ = 532e-9, w0 = 1e-3)
 plot(system, beam, size = (800, 150))
 savefig("plots-01.svg"); nothing # hide
 ```
@@ -253,9 +259,9 @@ plot(
     ylims = (-20.0e-6, 20.0e-6), # custom range for y axis
     size = (800, 500)
 )
-plot!(system, Beam(λ = 405nm, w0 = 1mm), label="405 nm")
-plot!(system, Beam(λ = 532nm, w0 = 1mm), label="532 nm")
-plot!(system, Beam(λ = 638nm, w0 = 1mm), label="638 nm")
+plot!(system, GaussianBeam(λ = 405nm, w0 = 1mm), label="405 nm")
+plot!(system, GaussianBeam(λ = 532nm, w0 = 1mm), label="532 nm")
+plot!(system, GaussianBeam(λ = 638nm, w0 = 1mm), label="638 nm")
 plot!(
     xlabel = "Distance along Beam Axis [m]",
     ylabel = "Beam 1/e^2 Extent [m]",
@@ -303,12 +309,6 @@ Tan
 Sag
 ```
 
-### Accessor Functions
-```@docs
-η
-dz
-```
-
 ## Ray Transfer Matrices
 ```@docs
 Base.Matrix
@@ -316,16 +316,44 @@ transform
 ```
 
 ## Beam Tracing
+### General
+
+The following is implemented primarily for geometric optics (using a
+[`GeometricBeam`](@ref)) but as Gaussian (laser) optics shares the
+same implementation, it is (partially) relevant for Gaussian optics
+(using a [`GaussianBeam`](@ref)), too.
+
 ```@docs
-Beam
+GeometricBeam
+location
+ior
+radialpos
+slope
+```
+
+### Gaussian Beams
+
+```@docs
+GaussianBeam
 beamtrace
 discretize
 spotradius
 spotradiusfunc
-location
 ```
 
-## Miscellenea
+## Internals
+
+```@docs
+AbstractBeam
+```
+
+### Accessor Functions
+```@docs
+η
+dz
+```
+
+### Miscellanea
 ```@docs
 color
 ```

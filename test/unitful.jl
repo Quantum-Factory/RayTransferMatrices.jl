@@ -47,7 +47,7 @@ w0u = 1mm
 λu = 1000nm
 expander_2x_u = [ThinLens(f=fu), FreeSpace(3fu), ThinLens(f=2fu)]
 system_u = [expander_2x_u; FreeSpace(Lu); reverse(expander_2x_u)]
-beam_u = Beam(λ = λu, w0 = w0u)
+beam_u = GaussianBeam(λ = λu, w0 = w0u)
 
 @testset "Ray Transfer Matrices" begin
     @test isUnitfulRayTransferMatrix(Matrix(ThinLens(f=100mm)))
@@ -61,16 +61,15 @@ beam_u = Beam(λ = λu, w0 = w0u)
     ]))
 end
 @testset "transform" begin
-    @test dimension(beam_u.z) == dimension(1Unitful.m)
-    @test transform(ThinLens(f=100mm), beam_u) isa Beam
-    @test transform(FreeSpace(500mm), beam_u) isa Beam
-    @test transform(system_u, beam_u) isa Beam
+    @test transform(ThinLens(f=100mm), beam_u) isa GaussianBeam
+    @test transform(FreeSpace(500mm), beam_u) isa GaussianBeam
+    @test transform(system_u, beam_u) isa GaussianBeam
 end
 @testset "general" begin
     @test Matrix(Sag(system_u)) == Matrix(Tan(system_u))
     @test isUnitfulRayTransferMatrix(Matrix(Sag(system_u)))
     @test isUnitfulRayTransferMatrix(Matrix(Tan(system_u)))
-    @test beamtrace(system_u, beam_u) isa Vector{Beam}
+    @test beamtrace(system_u, beam_u) isa Vector{GaussianBeam}
     @test spotradiusfunc(expander_2x_u, beam_u)(3fu) ≈
         2w0u rtol=0.01
 end
