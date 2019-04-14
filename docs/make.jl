@@ -22,6 +22,10 @@ makedocs(
     format = Documenter.HTML(
         prettyurls = false # put everything in one file
     ),
+    # Uncomment the following only when you know what you're doing!
+    # (it will make all doctests pass by overwritting the expected
+    # output)
+    #doctest = :fix,
     modules = [ABCDBeamTrace]
 )
 

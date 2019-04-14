@@ -4,10 +4,11 @@ export FreeSpace, Interface, ThinLens, Mirror, Tan, Sag, RTM, Beam
 export beamtrace, spotsize, location, discretize
 export spotradius, spotradiusfunc
 export WithBeam
+export transform
 
 using DocStringExtensions
 using RecipesBase
-import Colors, Interpolations
+import Unitful, Colors, Interpolations
 
 include("elements.jl")
 include("beamtrace.jl")
