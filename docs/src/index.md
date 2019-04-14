@@ -47,10 +47,10 @@ expander_2x = [ThinLens(f=f), FreeSpace(3f), ThinLens(f=2f)]
 
 # output
 
-3-element Array{ABCDBeamTrace.Element,1}:
- ThinLens(0.125, 0)
- FreeSpace(0.375)
- ThinLens(0.25, 0)
+3-element Array{ABCDBeamTrace.Element{Float64,Float64},1}:
+ ThinLens{Float64,Float64}(0.125, 0.0)
+ FreeSpace{Float64,Float64}(0.375)
+ ThinLens{Float64,Float64}(0.25, 0.0)
 ```
 
 This means that we can also compose two optical systems using vector
@@ -64,14 +64,14 @@ system = [expander_2x; FreeSpace(L); reverse(expander_2x)]
 
 # output
 
-7-element Array{ABCDBeamTrace.Element,1}:
- ThinLens(0.125, 0)
- FreeSpace(0.375)
- ThinLens(0.25, 0)
- FreeSpace(1.0)
- ThinLens(0.25, 0)
- FreeSpace(0.375)
- ThinLens(0.125, 0)
+7-element Array{ABCDBeamTrace.Element{Float64,Float64},1}:
+ ThinLens{Float64,Float64}(0.125, 0.0)
+ FreeSpace{Float64,Float64}(0.375)
+ ThinLens{Float64,Float64}(0.25, 0.0)
+ FreeSpace{Float64,Float64}(1.0)
+ ThinLens{Float64,Float64}(0.25, 0.0)
+ FreeSpace{Float64,Float64}(0.375)
+ ThinLens{Float64,Float64}(0.125, 0.0)
 ```
 
 Note the implicit use of `vcat` (via the semicolon notation) in
@@ -138,6 +138,35 @@ Perhaps the most useful part of this whole package is the ability to trace the b
 
 # Examples
 
+## Unitful Integration
+
+Package [Unitful](https://github.com/ajkeller34/Unitful.jl) can be
+used to specify units e.g. for wavelengths, distances along the beam
+axis, beam waist radii, etc. A few examples follow:
+
+!!! note
+    Currently, a branch of
+    [this Unitful fork](https://github.com/Quantum-Factory/Unitful.jl)
+    must be used because the registered package Unitful misses
+    some functionality regarding unitful, complex quantities such as
+    the beam parameter.
+
+```jldoctest
+using ABCDBeamTrace, Unitful
+using Unitful: nm, µm, mm, cm, m
+f = 125mm
+L = 50cm
+expander_2x = [ThinLens(f=f), FreeSpace(3f), ThinLens(f=2f)]
+system = [expander_2x; FreeSpace(L); reverse(expander_2x)]
+inputbeam = Beam(λ = 532nm, w0 = 500µm)
+outputbeam = transform(system, inputbeam)
+uconvert(µm, spotradius(outputbeam))
+
+# output
+
+499.9999999999999 μm
+```
+
 ## Plotting
 
 To plot a system (a vector of [`Element`](@ref)) with a [`Beam`](@ref)
@@ -147,7 +176,7 @@ exampe, to plot a laser beam's ``1/e^2`` full diameter, use the
 following:
 
 ```@example
-using ABCDBeamTrace, Plots#, Colors
+using ABCDBeamTrace, Plots
 f = 10e-3 # focal length of 10 mm in SI base units (m)
 L = 20e-3 # distance of 20 mm (SI) betweeen sub systems
 expander_2x = [ThinLens(f=f), FreeSpace(3f), ThinLens(f=2f)]
@@ -170,20 +199,24 @@ code generating a plot of three beams of different wavelengths near
 the focus of a lens and exaggerates the beam width:
 
 ```@example
-using ABCDBeamTrace, Plots#, Colors
-f = 50e-3 # focal length of 50 mm in SI base units (m)
-L = 1000e-3 # propagation length of 1 m (from the initial waist pos.)
+using ABCDBeamTrace, Plots
+using Unitful: nm, µm, mm, m
+f = 50mm
+L = 1000mm
 system = [
     FreeSpace(L), ThinLens(f=f), FreeSpace(0.98f), FreeSpace(0.04f)
 ]
 plot(
-    xlims = (L+0.98f, L+1.02f), # custom range for x axis
+    xlims = ( # custom range for x axis
+        0.0 + (L+0.98f) / m,
+        0.0 + (L+1.02f) / m
+    ),
     ylims = (-20.0e-6, 20.0e-6), # custom range for y axis
     size = (800, 500)
 )
-plot!(system, Beam(λ = 405e-9, w0 = 1e-3), label="405 nm")
-plot!(system, Beam(λ = 532e-9, w0 = 1e-3), label="532 nm")
-plot!(system, Beam(λ = 638e-9, w0 = 1e-3), label="638 nm")
+plot!(system, Beam(λ = 405nm, w0 = 1mm), label="405 nm")
+plot!(system, Beam(λ = 532nm, w0 = 1mm), label="532 nm")
+plot!(system, Beam(λ = 638nm, w0 = 1mm), label="638 nm")
 plot!(
     xlabel = "Distance along Beam Axis [m]",
     ylabel = "Beam 1/e^2 Extent [m]",

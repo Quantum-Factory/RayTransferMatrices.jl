@@ -1,9 +1,6 @@
 using ABCDBeamTrace
-@static if VERSION < v"0.7.0-DEV.2005"
-    using Base.Test
-else
-    using Test
-end
+using Test
+import Pkg
 
 # general test setup
 f = 100e-3
@@ -25,4 +22,25 @@ end
     @test spotradiusfunc(expander_2x, beam) isa Function
     @test spotradiusfunc(expander_2x, beam)(0) == w0
     @test spotradiusfunc(expander_2x, beam)(3f) ≈ 2w0 rtol=0.01
+end
+
+@testset "transform" begin
+    @test transform(system, beam) isa Beam
+end
+
+@testset "planes" begin
+    # system with no astigmatism: sagittal and parallel plane should
+    # be identical (within numerical error)
+    @test RTM(Sag(system)) ≈ RTM(Tan(system))
+end
+
+@testset "unitful" begin
+    if haskey(Pkg.installed(), "Unitful")
+        include("unitful.jl")
+    else
+        @warn string(
+            "Skipping Unitful Tests because ",
+            "package Unitful is not installed"
+        )
+    end
 end

@@ -5,13 +5,58 @@ Construct a Beam object for modeling the propagation of a Gaussian
 
 $(SIGNATURES)
 
+This type is parametrized on three underlying types, `L` (for lengths
+such as the wavelength or the location along the beam axis), `CL` (for
+complex-valued lengths such as the beam parameter), and `N` (for
+dimensionless numbers such as the optical density and a normalization
+constant `k`).
+
 """
-struct Beam
-    λ::Real; z::Real; n::Real
-    x::Real; k::Real; q::Complex
+struct Beam{L,CL,N}
+    λ::L # vacuum wavelength
+    z::L # position along beam axis
+    n::N # inde of refraction aka optical density
+    x::L # radial extent
+    k::N # (angle/sin/tan of) slope of beam
+    q::CL # complex beam parameter
 end
-Beam(; λ::Real, w0::Real, n::Real = 1) =
-    Beam(λ, 0, n, 0, 0, 1im * π * n * w0^2 / λ)
+function Beam(
+    ;
+    λ::Number, # vacuum wavelength
+    w0::Number, # waist radius
+    z0::Number = zero(λ), # waist position along beam axis
+    n::Number = 1 # ior: index of refraction (aka optical density)
+)
+    # determine dimensional compatibility of types using the trick
+    # that zero(one(x)) == zero(x) if and only if x is dimensionless
+    if zero(one(n)) != zero(n)
+        throw(DomainError("n must be dimensionless"))
+    end
+    if zero(one(w0 / λ)) != zero(w0 / λ)
+        throw(DomainError("ratios of lengths must be dimensionless"))
+    end
+    if zero(one(z0 / λ)) != zero(z0 / λ)
+        throw(DomainError("ratios of lengths must be dimensionless"))
+    end
+    # promote arguments, prepending p for "promoted" to variable names
+    pλ, pw0, pz0 = promote(float(λ), float(w0), float(z0))
+    pn = float(n)
+    # determine values
+    pz = zero(pλ) # position along beam axis (zero)
+    pzR = π * pn * pw0^2 / pλ # Rayleigh length (aka Rayleigh range)
+    # determine types
+    L = typeof(pλ)
+    CL = complex(L)
+    N = typeof(one(pλ))
+    return Beam{L,CL,N}(
+        pλ,
+        pz,
+        n,
+        zero(pλ),
+        zero(pn),
+        pz - pz0 + 1im * pzR
+    )
+end
 @deprecate Beam(λ_beam, w0_beam) Beam(λ=λ_beam, w0=w0_beam)
 @deprecate Beam(λ_beam, w0_beam, n0) Beam(λ=λ_beam, w0=w0_beam, n=n0)
 
@@ -47,21 +92,63 @@ The distance is measured along the beam's direction of propagation
 """
 dz(e::FreeSpace) = e.L
 dz(e::Union{Tan,Sag}) = dz(e.e)
-dz(e::Element) = 0
+dz(e::Element{L,N}) where {L,N} = zero(L)
 
 """
 
-Propagate a [`Beam`](@ref) through an [`Element`](@ref) or a System
-(represented by a vector of elements).
+Propagate a [`Beam`](@ref) through an [`Element`](@ref), a System
+(represented by a vector of elements), or through a ray transfer
+matrix.
 
 $(SIGNATURES)
 
-Note that the `Beam` is the second argument.
+Note that the `Beam` is the second argument. If a ray transfer matrix
+is given as first argument, observe the optional keyword arguments to
+pass a propagation distance `dz` and a ratio `η` of new to old
+refractive index.
 
 """
-function transform(e::Union{Element,Vector{<:Element}}, Γ::Beam)
-    M = RTM(e)
-    return Beam(Γ.λ, Γ.z+dz(e), Γ.n/η(e), M*[Γ.x,Γ.k]..., /(M*[Γ.q,1]...))
+function transform(system::Vector{<:Element}, Γ::Beam)
+    for i = 1:length(system)
+        Γ = transform(system[1], Γ)
+    end
+    return Γ
+end
+transform(e::Element, Γ::Beam) =
+    transform(RTM(e), Γ; dz = dz(e), η = η(e))
+transform(m::Matrix, Γ::Beam; dz = zero(m[1,1]), η = one(m[1,1])) =
+    Beam(Γ.λ, Γ.z+dz, Γ.n/η, (m*[Γ.x,Γ.k])..., /((m*[Γ.q,1])...))
+# the above is rather succinct, hence here an alternative
+# implementation for reference
+#
+# To Do: Remove one of these implementations from the source code
+function alt_transform(
+    m::Matrix,
+    Γ::Beam;
+    dz::L = zero(m[1,2]),
+    η::N = one(m[1,1])
+) where {L,N}
+    # new types
+    L2 = float(L)
+    N2 = float(N)
+    CL2 = complex(L2)
+    # ray transfer matrix values ABCD
+    A::N2 = m[1,1]
+    B::L2 = m[1,2]
+    C = m[2,1]
+    D::N2 = m[2,2]
+    # new values
+    z::L2 = Γ.z + dz
+    xk = m * [Γ.x, Γ.k]
+    q2::CL2 = (A*Γ.q + B) / (C*Γ.q + D)
+    return Beam{L2,CL2,N2}(
+        Γ.λ,
+        z,
+        (Γ.n / η),
+        xk[1],
+        xk[2],
+        q2
+    )
 end
 
 """
@@ -80,7 +167,8 @@ Note that the [`Beam`](@ref) is the second argument.
 
 """
 function beamtrace(elems::Vector{<:Element}, Γ0::Beam)
-    Γs = Vector{Beam}(undef, length(elems)+1); Γs[1] = Γ0
+    Γs = Vector{Beam}(undef, length(elems)+1)
+    Γs[1] = Γ0
     for (ind, elem) in enumerate(elems)
         Γs[ind+1] = transform(elem, Γs[ind])
     end
