@@ -115,32 +115,42 @@ Sag(elements::Vector{<:Element}) = Sag.(elements)
 
 """
 
-`RTM` returns the Ray Transfer (ABCD) matrix associated with the
-given, optical [`Element`](@ref) or an entire system (a vector of
-`Element`).
+Constructing a matrix results in the ray transfer matrix (also known
+as ABCD matrix) representing the given, optical [`Element`](@ref) or
+an entire system (a vector of `Element`).
 
 $(SIGNATURES)
 
-The matrix is represented as a julia `Matrix` with eltype `number`
-unless a specialization applies when using plain numbers (without
-units).
+The matrix is represented as a julia `Matrix` with element type
+`number` unless a specialization applies when using plain numbers
+(without units).
 
 """
-RTM(e::FreeSpace) = [1 e.L ; zero(inv(e.L)) 1]
-RTM(e::Interface) = [1 zero(e.R) ; (e.η-1)/e.R e.η]
-RTM(e::ThinLens) = [1 zero(e.f) ; -inv(e.f) 1]
-RTM(e::Tan{ThinLens{T,N},T,N}) where {T,N} =
-    RTM(ThinLens(; f = e.e.f * cos(e.e.θ), aoi = e.e.θ))
-RTM(e::Sag{ThinLens{T,N},T,N}) where {T,N}  =
-    RTM(ThinLens(; f = e.e.f / cos(e.e.θ), aoi = e.e.θ))
-# See doi:10.1364/AO.26.000427 for the following matrices
-function RTM(e::Tan{Interface{T,N},T,N}) where {T,N}
-    θ1, η, R = e.e.θ, e.e.η, e.e.R; θ2 = asin(η*sin(θ1))
-    return [cos(θ2)/cos(θ1) zero(L) ;
-        (cos(θ2)-η*cos(θ1))/(R*cos(θ1)*cos(θ2)) η*cos(θ1)/cos(θ2)]
+Base.Matrix(e::FreeSpace) = [1 e.L ; zero(inv(e.L)) 1]
+Base.Matrix(e::Interface) = [1 zero(e.R) ; (e.η-1)/e.R e.η]
+Base.Matrix(e::ThinLens) = [1 zero(e.f) ; -inv(e.f) 1]
+Base.Matrix(e::Tan{ThinLens{T,N},T,N}) where {T,N} =
+    Matrix(ThinLens(; f = e.e.f * cos(e.e.θ), aoi = e.e.θ))
+Base.Matrix(e::Sag{ThinLens{T,N},T,N}) where {T,N}  =
+    Matrix(ThinLens(; f = e.e.f / cos(e.e.θ), aoi = e.e.θ))
+function Base.Matrix(e::Tan{Interface{T,N},T,N}) where {T,N}
+    # See doi:10.1364/AO.26.000427 for the following matrix
+    θ1 = e.e.θ
+    η = e.e.η
+    R = e.e.R
+    θ2 = asin(η * sin(θ1))
+    return [
+        cos(θ2)/cos(θ1) zero(L) ;
+        (cos(θ2)-η*cos(θ1))/(R*cos(θ1)*cos(θ2)) η*cos(θ1)/cos(θ2)
+    ]
 end
-function RTM(e::Sag{Interface{T,N},T,N}) where {T,N}
-    θ1, η, R = e.e.θ, e.e.η, e.e.R; θ2 = asin(η*sin(θ1))
+function Base.Matrix(e::Sag{Interface{T,N},T,N}) where {T,N}
+    # See doi:10.1364/AO.26.000427 for the following matrix
+    θ1 = e.e.θ
+    η = e.e.η
+    R = e.e.R
+    θ2 = asin(η * sin(θ1))
     return [one(N) zero(L) ; (cos(θ2)-η*cos(θ1))/R η]
 end
-RTM(elements::Vector{<:Element}) = prod(RTM.(elements))
+Base.Matrix(elements::Vector{<:Element}) = prod(Matrix.(elements))
+@deprecate RTM(element) Matrix(element)

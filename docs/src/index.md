@@ -92,10 +92,18 @@ Note the implicit use of `vcat` (via the semicolon notation) in
 composing systems together.
 
 ### Ray transfer (ABCD) matrices
-The usual ABCD formalism for calculations involve the multiplication of 2x2 matrices, as discussed in the references above. To facilitate this formalism, each element has a well-defined matrix, which is accessed by calling `RTM(e::Element)`.  For example, `RTM(ThinLens(100)) == [1 0 ; -1/100 1]` evaluates as true.  Dot syntax for broadcasting can be used to create a corresponding vector of matrices, and the corresponding elements can be multiplied up, as in
+The usual ABCD formalism for calculations involve the multiplication
+of 2x2 matrices, as discussed in the references above. To facilitate
+this formalism, each element has a well-defined matrix, which is
+accessed by calling `Matrix(e::Element)`.  For example,
+`Matrix(ThinLens(100)) == [1 0 ; -1/100 1]` evaluates as true.  Dot
+syntax for broadcasting can be used to create a corresponding vector
+of matrices, and the corresponding elements can be multiplied up, as
+in
+
 ```jldoctest usage
 # Total ABCD matrix for above 4-lens system
-system_RTM = RTM(system)
+system_RTM = Matrix(system)
 
 # output
 
@@ -105,9 +113,19 @@ system_RTM = RTM(system)
 ```
 
 ### Sagittal and tangential elements
-In the ABCD formalism, optical components that can have a non-zero tilt relative to the optical axis (i.e., with a nonzero field `θ`) bifurcate into two distinct elements, acting differently on the sagittal and tangential components of the ray or Gaussian beam.  To represent this dual behavior, composite `Element` types called `Tan` and `Sag` wrap the fundamental `Element` types and dispatch differently on `RTM` in order to produce the respective ray transfer matrices for the tangential and sagittal components.
+In the ABCD formalism, optical components that can have a non-zero
+tilt relative to the optical axis (i.e., with a nonzero field `θ` for
+the angle of incidence) bifurcate into two distinct elements, acting
+differently on the sagittal and tangential components of the ray or
+Gaussian beam.  To represent this dual behavior, composite
+[`Element`](@ref) types called [`Tan`](@ref) and [`Sag`](@ref) wrap
+the fundamental [`Element`](@ref) types and dispatch differently on
+[`Base.Matrix`](@ref) in order to produce the respective ray transfer
+matrices for the tangential and sagittal components.
 
-For example, suppose the above beam expander were misaligned with a tilt angle represented by `θ::Real`.  We would represent the optical system as
+For example, suppose the above beam expander were misaligned with a
+tilt angle represented by `θ::Real`.  We would represent the optical
+system as
 ```jldoctest usage
 f = 125e-3 # focal length of 125mm in SI base units (m)
 θ = 1.0 * π/180 # one degree of misalignment in radians
@@ -115,8 +133,8 @@ f = 125e-3 # focal length of 125mm in SI base units (m)
 system = [ThinLens(f=f,aoi=θ), FreeSpace(3f), ThinLens(f=2f,aoi=θ)]
 system_tan = Tan(system) # Elements as seen by tangential component
 system_sag = Sag(system) # Elements as seen by sagittal component
-system_tan_RTM = RTM(system_tan) # Total matrix in the tangential component
-system_sag_RTM = RTM(system_sag) # Total matrix in the sagittal component
+system_tan_RTM = Matrix(system_tan) # Total matrix in the tangential component
+system_sag_RTM = Matrix(system_sag) # Total matrix in the sagittal component
 system_tan_RTM, system_sag_RTM
 
 # output
@@ -124,7 +142,14 @@ system_tan_RTM, system_sag_RTM
 ([-0.500228 0.375; 0.00182821 -2.00046], [-0.499772 0.375; -0.00182738 -1.99954])
 ```
 
-**Note**: If no calls are made to either `Tan` and `Sag` (as in the first line above), the `θ` field (if present) confers *no effect*; in this case, `RTM` returns the ray transfer matrix as if we set `θ=0`.  Also, note that `FreeSpace` does not wrap into these composite objects: `Tan(e::FreeSpace) = Sag(e::FreeSpace) = e`.  (This latter behavior could be changed, should there be a reason for it to be otherwise...)
+!!! note
+    If no calls are made to either `Tan` and `Sag` (as in the first
+    line above), the `θ` field (if present) confers *no effect*; in
+    this case, `Base.Matrix` returns the ray transfer matrix as if we
+    set `θ=0`.  Also, note that `FreeSpace` does not wrap into these
+    composite objects: `Tan(e::FreeSpace) = Sag(e::FreeSpace) = e`.
+    (This latter behavior could be changed, should there be a reason
+    for it to be otherwise...)
 
 ## Beam propagation
 The numerical ray transfer matrices in the ABCD formalism facilitate a transfer-function-based approach to optical analysis.  However, it is also possible to take a *state-based* viewpoint, by representing the state of the ray or beam as it passes through the elements.  Here, the parameters that describe the state of the beam are modified by each element, causing the beam to evolve as it propagates through the elements.  This approach is most useful for visualizing the optical propagation of the beam, or for optimizing beam properties in the design.
@@ -286,7 +311,7 @@ dz
 
 ## Ray Transfer Matrices
 ```@docs
-RTM
+Base.Matrix
 transform
 ```
 
