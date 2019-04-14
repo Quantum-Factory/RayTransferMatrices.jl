@@ -89,14 +89,17 @@ end
 
 """
 
-Return the waist radius of a beam at its current location.
+Return the ``1/e^2`` radius of a beam at its current location.
 
 $(SIGNATURES)
 
-"""
-waistradius(Γ::Beam) = /(-Γ.λ, π*Γ.n*imag(1/Γ.q)) |> sqrt
+At the radius returned by this function, the intensity drops to
+``1/e^2``.
 
-@deprecate spotsize(beam) waistradius(beam)
+"""
+spotradius(Γ::Beam) = /(-Γ.λ, π*Γ.n*imag(1/Γ.q)) |> sqrt
+
+@deprecate spotsize(beam) spotradius(beam)
 
 """
 
@@ -119,7 +122,7 @@ define a return value for beam positions outside those covered by
 the system; the default is to throw a DomainError.
 
 """
-function waistradiusfunc(elements, beam::Beam; outside=nothing)
+function spotradiusfunc(elements, beam::Beam; outside=nothing)
     beams = Vector{Beam}(undef, length(elements)+1)
     beams[1] = beam
     for (i, el) in enumerate(elements)
@@ -148,7 +151,7 @@ function waistradiusfunc(elements, beam::Beam; outside=nothing)
         # add the effect of a FreeSpace element to reach the requested
         # beam position z
         beam = transform(FreeSpace(z - beams[i].z), beams[i])
-        return waistradius(beam)
+        return spotradius(beam)
     end
 end
 
