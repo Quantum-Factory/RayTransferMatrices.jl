@@ -13,6 +13,37 @@ abstract type Element{L,N} end
 
 """
 
+A generic, optical element constructed by giving its ray transfer
+matrix (or the ABCD entries, in order).
+
+$(SIGNATURES)
+
+"""
+struct ElementABCD{L,N} <: Element{L,N}
+    A::N
+    B::L
+    invC::L
+    D::N
+    # an inner constructor is needed to avoid that field invC gets
+    # assigned directly (with C, not inv(C) which it needs to be
+    # assigned)
+    function ElementABCD(A::N, B::L, C, D::N) where {L,N}
+        if zero(one(N)) != zero(N)
+            throw(DomainError("A and D must be dimensionless"))
+        end
+        if zero(one(B * C)) != zero(B * C)
+            throw(DomainError("B and C must have inverse dimensions"))
+        end
+        L2 = typeof(1.0B) # promote to float even if float(B) is not
+                          # defined
+        N2 = typeof(1.0A) # promote to float even if ...
+        return new{L2,N2}(A, B, inv(C), D)
+    end
+end
+ElementABCD(m::Matrix) = ElementABCD(m[1,1], m[1,2], m[2,1], m[2,2])
+
+"""
+
 An optical element representing propagation over free space.
 
 $(SIGNATURES)
@@ -126,6 +157,7 @@ The matrix is represented as a julia `Matrix` with element type
 (without units).
 
 """
+Base.Matrix(e::ElementABCD) = [e.A e.B; inv(e.invC) e.D]
 Base.Matrix(e::FreeSpace) = [1 e.L ; zero(inv(e.L)) 1]
 Base.Matrix(e::Interface) = [1 zero(e.R) ; (e.η-1)/e.R e.η]
 Base.Matrix(e::ThinLens) = [1 zero(e.f) ; -inv(e.f) 1]

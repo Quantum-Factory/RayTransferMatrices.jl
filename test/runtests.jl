@@ -72,6 +72,22 @@ end
     @test waistlocation(beam1) ≈ 0.1
     @test waistdistance(beam0) ≈ 0.1
     @test waistdistance(beam1) ≈ -0.9
+    # construct a GaussianBeam from the beam parameter (q) of another
+    q = beamparameter(beam1)
+    @test beamparameter(GaussianBeam(λ = 1000e-9, q = q)) ≈ q
+end
+
+@testset "Elements" begin
+    @testset "ElementABCD" begin
+        # Due to the type parametrization without an inverse length,
+        # there is a particular danger to get the wrong constructor
+        # with regard to the field invC. Check that the
+        # non-parametrized constructor works as expected.
+        @test Matrix(ElementABCD(1.0, 1.0, 10.0, 1.0)) == [
+            1.0 1.0;
+            10.0 1.0
+        ]
+    end
 end
 
 @testset "unitful" begin

@@ -209,7 +209,7 @@ uconvert(µm, spotradius(outputbeam))
 
 # output
 
-499.9999999999999 μm
+507.11840991014856 μm
 ```
 
 ## Plotting
@@ -276,6 +276,97 @@ savefig("plots-02.svg"); nothing # hide
     in or after the last invocation of `plot` or `plot!` in order to
     overwrite their default values.
 
+## Mode-Matching with SymPy
+
+If you are interested in using this package together with
+[SymPy.jl](https://github.com/JuliaPy/SymPy.jl), check the version of
+[python's SymPy](https://www.sympy.org) used behind the scenes:
+
+```jldoctest
+using SymPy
+SymPy.sympy.__version__
+
+# output
+
+"1.4"
+```
+
+If your version is lower, you are using an outdated version: Time to
+upgrade! Note that the versions shipped with linux distributions tend
+to be rather dated, so it is recommended to use other means of
+installation.
+
+Otherwise, the usage of `SymPy` is straight-forward. The following
+example uses it for mode-matching a fiber output to a cavity with
+known beam waists using two lenses of given focal length and the
+constraint of given positions of the waists (i.e. a given total
+optical path length):
+
+```@example sympy-modematching
+using ABCDBeamTrace, SymPy
+@vars z1 positive=true # SymPy variable for position of lens with f1
+@vars z2z1 positive=true # SymPy var. for distance between lenses
+z2 = z1 + z2z1 # position of lens with f2
+L = 0.5 # total length
+f1 = 0.050 # focal length for lens at z1
+f2 = 0.100 # focal length for lens at z2
+system = [
+    FreeSpace(z1),
+    ThinLens(f = f1),
+    FreeSpace(z2 - z1),
+    ThinLens(f = f2),
+    FreeSpace(L-z2)
+]
+bin = GaussianBeam(λ = 532e-9, w0 = 5e-6) # laser beam from fiber
+bout = transform(system, bin) # laser beam to cavity, calculated
+bwant = GaussianBeam(λ = 532e-9, w0 = 20e-6) # to cavity, required
+qout = beamparameter(bout)
+qwant = beamparameter(bwant)
+# numerically solve for SymPy variables z1 and z2z1
+z1sol, z2z1sol = sympy.nsolve(
+    [real(qout - qwant), imag(qout - qwant)], # expr for root finding
+    (z1, z2z1), # SymPy variables
+    (L/3, 2L/3) # initial values
+)
+# output lens positions in units of mm, rounded
+(
+    round(Int, 1000*convert(Float64, z1(z1 => z1sol, z2z1 => z2z1sol))),
+    round(Int, 1000*convert(Float64, z2(z1 => z1sol, z2z1 => z2z1sol)))
+)
+```
+
+Finally, continuing the code above, the resulting beam profile can be
+plotted. The main difficulty lies in performing substitution and type
+conversion, handled here by simply constructing the `system` again,
+this time with substituted values and using the new name
+`finalsystem`:
+
+```@example sympy-modematching
+using Plots
+# system, but with z1sol, z2z1sol substituted for z1, z2z1
+finalsystem = [
+    FreeSpace(Float64(z1sol)),
+    ThinLens(f = f1),
+    FreeSpace(Float64(z2z1sol)),
+    ThinLens(f = f2),
+    FreeSpace(Float64(L - z2z1sol - z1sol))
+]
+# plot the entire system
+plot(finalsystem, bin)
+plot!(
+    aspect_ratio = :none, # permit exaggeration of beam width
+    size = (800, 300)
+)
+savefig("plots-03.svg"); nothing # hide
+```
+
+![](plots-03.svg)
+
+!!! info "To Do"
+    The Gaussian nature of the beam would become obvious
+    if inset plots for the region around the two waists
+    were provided.
+
 ## Other Examples
 More detailed examples are upcoming.  In particular, this package has been developed with the following tasks in mind:
 * Cavity design
@@ -301,6 +392,7 @@ parallel) one via [`Tan`](@ref).
 
 ```@docs
 Element
+ElementABCD
 FreeSpace
 Interface
 ThinLens

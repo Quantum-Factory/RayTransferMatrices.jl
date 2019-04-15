@@ -41,6 +41,14 @@ function GeometricBeam(
     )
 end
 
+GeometricBeam{L,CL,N}(beam::GeometricBeam) where {L,CL,N} =
+    GeometricBeam{L,CL,N}(
+        L(beam.z),
+        N(beam.n),
+        L(beam.x),
+        N(beam.k)
+    )
+
 """
 
 Propagate a [`GeometricBeam`](@ref) through an [`Element`](@ref).
@@ -53,7 +61,11 @@ transform(
     Γ::GeometricBeam{L,CL,N};
     dz = zero(m[1,1]),
     η = one(m[1,1])
-) where {L,CL,N} = GeometricBeam{float(L),float(CL),float(N)}(
+) where {L,CL,N} = GeometricBeam{
+    promote_type(L, typeof(m[1,2])),
+    complex(promote_type(L, typeof(m[1,2]))),
+    promote_type(L, typeof(m[1,1]), typeof(m[2,2]))
+}(
     Γ.z + dz,
     Γ.n / η,
     (m * [Γ.x, Γ.k])...
