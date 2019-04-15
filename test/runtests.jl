@@ -52,6 +52,14 @@ end
     @test location(beam) == 0
 end
 
+@testset "comparisons" begin
+    @test FreeSpace(L) ≈ [FreeSpace(1.0L)]
+    @test FreeSpace(L) ≉ FreeSpace(1.1L)
+    @test FreeSpace(L) ≉ FreeSpace(0L)
+    # the following test has not been idependently calculated!
+    @test system ≈ FreeSpace(-0.5f)
+end
+
 @testset "GaussianBeam" begin
     beam0 = GaussianBeam(λ = 1000e-9, w0 = w0, z0 = 0.1)
     beam1 = transform(FreeSpace(1), beam0)
