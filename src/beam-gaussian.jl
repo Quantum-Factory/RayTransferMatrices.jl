@@ -24,8 +24,9 @@ struct GaussianBeam{L,CL,N} <: AbstractBeam{L,CL,N}
 end
 function GaussianBeam(
     ;
+    q = nothing, # complex beam parameter
     λ::Number, # vacuum wavelength
-    w0::Number, # waist radius
+    w0 = nothing, # waist radius
     z0::Number = zero(λ), # waist position along beam axis
     n::Number = 1 # ior: index of refraction (aka optical density)
 )
@@ -34,15 +35,29 @@ function GaussianBeam(
     if zero(one(n)) != zero(n)
         throw(DomainError("n must be dimensionless"))
     end
+    if isnothing(w0) == isnothing(q)
+        throw(DomainError("either q or w0 must be specified"))
+    end
+    if (z0 != zero(λ)) && !isnothing(q)
+        throw(DomainError("q and z0 cannot both be specified"))
+    end
+    if isnothing(w0)
+        rr = rayleighrange(q)
+        w0 = sqrt(rr * λ / (π * n))
+        z0 = waistdistance(q)
+    end
     if zero(one(w0 / λ)) != zero(w0 / λ)
         throw(DomainError("ratios of lengths must be dimensionless"))
     end
     if zero(one(z0 / λ)) != zero(z0 / λ)
         throw(DomainError("ratios of lengths must be dimensionless"))
     end
-    # promote arguments, prepending p for "promoted" to variable names
-    pλ, pw0, pz0 = promote(float(λ), float(w0), float(z0))
-    pn = float(n)
+    # promote arguments, prepending p for "promoted" to variable
+    # names; multiply by 1.0 to promote to float (without throwing an
+    # error for symbolic variables that do not have a float method
+    # defined)
+    pλ, pw0, pz0 = promote(1.0λ, 1.0w0, 1.0z0)
+    pn = 1.0n
     # determine values
     pz = zero(pλ) # position along beam axis (zero)
     pzR = π * pn * pw0^2 / pλ # Rayleigh length (aka Rayleigh range)
@@ -84,23 +99,30 @@ refractive index.
 function transform(bywhat::Any, ::AbstractBeam) end
 function transform(system::Vector{<:Element}, Γ::AbstractBeam)
     for i = 1:length(system)
-        Γ = transform(system[1], Γ)
+        Γ = transform(system[i], Γ)
     end
     return Γ
 end
 transform(e::Element, Γ::AbstractBeam) =
     transform(Matrix(e), Γ; dz = dz(e), η = η(e))
 transform(m::Matrix, q) = /((m * [q, 1])...) # beam parameter q
-transform(
+function transform(
     m::Matrix,
     Γ::GaussianBeam;
     dz = zero(m[1,1]),
     η = one(m[1,1])
-) = GaussianBeam(
-    transform(m, Γ.b; dz = dz, η = η),
-    Γ.λ,
-    transform(m, Γ.q)
 )
+    geometric_beam = transform(m, Γ.b; dz = dz, η = η)
+    q = transform(m, Γ.q)
+    L = typeof(real(q))
+    CL = typeof(q)
+    N = typeof(ior(geometric_beam))
+    return GaussianBeam{L,CL,N}(
+        GeometricBeam{L,CL,N}(geometric_beam),
+        Γ.λ,
+        q
+    )
+end
 
 """
 
@@ -129,9 +151,14 @@ end
 """
 
 Return the complex beam parameter (usually denoted `q`) of a
-[`GaussianBeam`](@ref).
+[`GaussianBeam`](@ref), a ray transfer matrix, an [`Element`](@ref) or
+a system (a `Vector` of element type [`Element`](@ref)).
 
 $(SIGNATURES)
+
+If an optical system is given, it is assumed to describe one resonator
+round-trip; the resulting beam parameter of the fundamental resonant
+mode (a Gaussiam beam) is returned or `nothing` if none exists.
 
 This function is also defined (as a stub) for an
 [`AbstractBeam`](@ref) to allow other packets to provide
@@ -148,6 +175,26 @@ implementations.
 function beamparameter(::AbstractBeam) end
 beamparameter(beam::GaussianBeam) = beam.q
 beamparameter(beam::GeometricBeam) = complex(location(beam))
+beamparameter(element::Element) = beamparameter(Matrix(element))
+beamparameter(system::Vector{<:Element}) =
+    beamparameter(Matrix(system))
+function beamparameter(m::Matrix)
+    A = m[1,1]
+    B = m[1,2]
+    C = m[2,1]
+    D = m[2,2]
+    if 4 - (A + D)^2 < 0
+        # no stable eigenmode
+        return nothing
+    end
+    # Eq. 57 of Kogelnik and Li, doi:10.1364/AO.5.001550)
+    re_inv_q = (D-A) / (2B)
+    im_inv_q = sqrt(4 - (A + D)^2) / (2B)
+    # decide sign in re_inv_q ± im_inv_q by which leads to a real
+    # beam width (see remark after Eq. 46): minus sign
+    inv_q = complex(re_inv_q, -im_inv_q)
+    return inv(inv_q)
+end
 
 """
 

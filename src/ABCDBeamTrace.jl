@@ -2,6 +2,7 @@ module ABCDBeamTrace
 
 export GaussianBeam, GeometricBeam
 export FreeSpace, Interface, ThinLens, Mirror, Tan, Sag
+export ElementABCD
 export beamtrace, location, discretize
 export ior, radialpos, slope
 export beamparameter, beamparameterproduct

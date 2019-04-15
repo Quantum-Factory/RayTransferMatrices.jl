@@ -89,7 +89,7 @@ function color(λ::AbstractFloat)
     color = Colors.HSL(hue_of_λ(λ), 1.0, 0.5)
 end
 color(λ::Unitful.Length) =
-    color(Unitful.uconvert(Unitful.NoUnits, λ / Unitful.m))
+    color(Unitful.uconvert(Unitful.NoUnits, float(λ) / Unitful.m))
 
 # user recipe, e.g. for `plot(system, beam)`
 @recipe f(system::Vector{<:Element}, beam::GaussianBeam) =
