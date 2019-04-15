@@ -309,6 +309,13 @@ Tan
 Sag
 ```
 
+```@docs
+Base.isapprox
+```
+
+!!! info "To Do"
+    Implement `Base.isapprox` for beams as well.
+
 ## Ray Transfer Matrices
 ```@docs
 Base.Matrix
@@ -317,6 +324,13 @@ transform
 
 ## Beam Tracing
 ### General
+
+Beams are represented by two concrete types. Whilst they are addressed
+in different Sections, namely in [Geometric Beams] and [Gaussian
+Beams], both sections apply to all kinds of beams. Internally, an
+abstract supertype [`AbstractBeam`](@ref) is used.
+
+### Geometric Beams
 
 The following is implemented primarily for geometric optics (using a
 [`GeometricBeam`](@ref)) but as Gaussian (laser) optics shares the
