@@ -367,6 +367,117 @@ savefig("plots-03.svg"); nothing # hide
     if inset plots for the region around the two waists
     were provided.
 
+## Symmetric Cavity Design with Symata
+
+[Symata.jl](https://github.com/jlapeyre/Symata.jl) is an entire
+language for symbolic mathematics that is somewhat close to the
+commercial computer algebra language
+[Mathematica](https://www.wolfram.com/mathematica/). It also comes
+with bindings for julia which will be used in the following example.
+The version of Symata (and its main depedencies) used in the following
+is:
+
+```jldoctest
+using Symata
+@symExpr VersionInfo()
+
+# output
+
+Symata version     0.4.5
+Julia version      1.1.0
+Python version     3.6.7
+┌ Warning: `getindex(o::PyObject, s::Symbol)` is deprecated in favor of dot overloading (`getproperty`) so elements should now be accessed as e.g. `o.s` instead of `o[:s]`.
+│   caller = _versioninfo() at kernelstate.jl:33
+└ @ Symata ~/.julia/packages/Symata/1oDeR/src/kernelstate.jl:33
+SymPy version      1.4
+```
+
+Missing from Symata.jl are methods such as `Base.one`, which this
+package requires. Hence one must start by retrofitting these, in
+addition to calling `symatamath()`:
+
+```@example symata
+using Symata
+import Base
+symatamath()
+Base.one(::Mxpr) = @symExpr 1
+Base.zero(::Mxpr) = @symExpr 0
+Base.inv(m::Mxpr) = mxpr(:Power, m, -1)
+Base.sqrt(m::Mxpr) = mxpr(:Power, m, 1//2)
+Base.abs(m::Mxpr) = sqrt(m*m)
+Base.complex(x::Mxpr, y::Mxpr) = x + im * y
+nothing # hide
+```
+
+The cavity to be designed is symmetric and esentially a [Fabry–Pérot
+Interferometer](https://en.wikipedia.org/wiki/Fabry%E2%80%93P%C3%A9rot_interferometer)
+with the exception of having curved rather than flat end mirrors. Both
+mirrors shall have the same, fixed radius of curvature `roc` and the
+distance `L` between them is a variable. Continuing from the
+definition of `Base.one` and `Base.zero` above:
+
+```@example symata
+using ABCDBeamTrace
+# 100 mm radius of curvature corresponding to 50 mm focal length
+roc = 100e-3
+# variable distance between mirrors (cavity length)
+len = @sym L
+if len isa Number # hide
+    len = :L # hide
+end # hide
+# the optical system: a single pass through the cavity
+singlepass = [FreeSpace(1.0len), Mirror(roc=roc)]
+## a full cavity roundtrip (for this special case)
+roundtrip = [singlepass; singlepass]
+q = beamparameter(roundtrip)
+# define a function to return the resonant mode
+# as a Gaussian beam after substitution for length
+function modeforlength(actuallength)
+    setsymata(len, actuallength) # substitute for L, also in q
+    return GaussianBeam(; q = symeval(q), λ = 632.8e-9)
+end
+println(1e6 * waistradius(modeforlength(75.0e-3)), " µm")
+```
+
+!!! note
+    For substitution, `setsymata` and `symeval` was used. A nicer
+    solution would be using a `@symExpr` involving `Replace` but that
+    currently fails because of
+    [this issue](https://github.com/jlapeyre/Symata.jl/issues/170).
+
+The resulting on-mirror spotradius, intra-cavity waist radius, and the
+intra-cavity Rayleigh range can easily be plotted over the range of
+permissible cavity lengths (zero which is effectively co-planar to 0.2
+[m] which is concentric).
+
+```@example symata
+using Plots
+plot(
+    z -> 1.0e6 * spotradius(modeforlength(z), none = NaN),
+    label = "On-Mirror Spot Radius [µm]",
+    xlims = (0.0, 200.0e-3),
+    xlabel = "Mirror Distance [m]",
+    ylims = (0.0, 400.0),
+    ylabel = "1/e^2 Radius [µm] or Rayleigh Range [mm]",
+    size = (800, 600)
+)
+plot!(
+    z -> 1.0e6 * waistradius(modeforlength(z), none = NaN),
+    label = "Intra-Cavity Waist Radius [µm]"
+)
+plot!(
+    z -> 1.0e3 * rayleighrange(modeforlength(z)),
+    label = "Intra-cavity Rayleigh Range [mm]"
+)
+savefig("plots-04.svg"); nothing # hide
+```
+
+![](plots-04.svg)
+
+!!! info "To Do"
+    It would be neat to have one or more inset plots of the beam
+    profile, e.g. for the confocal case.
+
 ## Other Examples
 More detailed examples are upcoming.  In particular, this package has been developed with the following tasks in mind:
 * Cavity design
@@ -456,6 +567,7 @@ wavefrontroc
 rayleighrange
 waistlocation
 waistdistance
+waistradius
 spotradius
 spotradiusfunc
 ```

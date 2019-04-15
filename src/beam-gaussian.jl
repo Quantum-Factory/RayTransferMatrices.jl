@@ -183,7 +183,7 @@ function beamparameter(m::Matrix)
     B = m[1,2]
     C = m[2,1]
     D = m[2,2]
-    if 4 - (A + D)^2 < 0
+    if A isa Number && D isa Number && 4 - (A + D)^2 < 0
         # no stable eigenmode
         return nothing
     end
@@ -191,8 +191,8 @@ function beamparameter(m::Matrix)
     re_inv_q = (D-A) / (2B)
     im_inv_q = sqrt(4 - (A + D)^2) / (2B)
     # decide sign in re_inv_q ± im_inv_q by which leads to a real
-    # beam width (see remark after Eq. 46): minus sign
-    inv_q = complex(re_inv_q, -im_inv_q)
+    # beam width (see remark after Eq. 46): im_inv_q > 0
+    inv_q = complex(re_inv_q, -abs(im_inv_q))
     return inv(inv_q)
 end
 
@@ -283,15 +283,53 @@ waistdistance(q) = -real(q)
 
 """
 
+Return the ``1/e^2`` radius of the beam waist of a
+[`GaussianBeam`](@ref).
+
+$(SIGNATURES)
+
+Note that the beam waist may occur outside of physical
+constraints. Its radius is calculated as if it would really occur.
+
+"""
+function waistradius(::AbstractBeam) end
+function waistradius(beam::GaussianBeam; none = :error)
+    rr = rayleighrange(beam)
+    # should none be returned (instead of letting sqrt throw a
+    # DomainError)?
+    if rr isa Number && rr < zero(rr) && none !== :error
+        return none
+    end
+    return sqrt(rr * beam.λ / (π * ior(beam)))
+end
+
+"""
+
 Return the ``1/e^2`` radius of a beam at its current location.
 
 $(SIGNATURES)
 
 At the radius returned by this function, the intensity drops to
-``1/e^2``.
+``1/e^2``. If the keyword argument `none` is specified, return
+that argument rather than throw a `DomainError` if the beam is
+invalid, i.e. has no (real and finite) spotradius.
 
 """
-spotradius(Γ::GaussianBeam) = /(-Γ.λ, π*ior(Γ)*imag(1/Γ.q)) |> sqrt
+function spotradius(Γ::GaussianBeam; none = :error)
+    wsquared = -Γ.λ / (π * ior(Γ) * imag(inv(beamparameter(Γ))))
+    if isnothing(none) || none !== :error
+        # return a custom value if there is no spotradius, rather than
+        # the DomainError that would normally result (but only if the
+        # result is numeric, i.e. wsquared is a Number, as isless will
+        # likely not be implemented for a symbolic result)
+        if wsquared isa Number
+            if wsquared < zero(wsquared) || isinf(wsquared)
+                return none
+            end
+        end
+    end
+    return sqrt(wsquared)
+end
 @deprecate spotsize(beam) spotradius(beam)
 
 """
