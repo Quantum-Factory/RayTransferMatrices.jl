@@ -68,14 +68,15 @@ end
 
 """
 
-Propagate a [`GaussianBeam`](@ref) through an [`Element`](@ref), a System
-(represented by a vector of elements), or through a ray transfer
-matrix.
+Propagate a [`GaussianBeam`](@ref) or complex beam parameter through
+an [`Element`](@ref), a System (represented by a vector of elements),
+or through a ray transfer matrix.
 
 $(SIGNATURES)
 
-Note that the `GaussianBeam` is the second argument. If a ray transfer matrix
-is given as first argument, observe the optional keyword arguments to
+Note that the [`GaussianBeam`](@ref) `Γ` (or the complex beam
+parameter `q`) is the second argument. If a ray transfer matrix is
+given as first argument, observe the optional keyword arguments to
 pass a propagation distance `dz` and a ratio `η` of new to old
 refractive index.
 
@@ -89,8 +90,17 @@ function transform(system::Vector{<:Element}, Γ::AbstractBeam)
 end
 transform(e::Element, Γ::AbstractBeam) =
     transform(Matrix(e), Γ; dz = dz(e), η = η(e))
-transform(m::Matrix, Γ::GaussianBeam; dz = zero(m[1,1]), η = one(m[1,1])) =
-    GaussianBeam(transform(m, Γ.b; dz = dz, η = η), Γ.λ, /((m*[Γ.q,1])...))
+transform(m::Matrix, q) = /((m * [q, 1])...) # beam parameter q
+transform(
+    m::Matrix,
+    Γ::GaussianBeam;
+    dz = zero(m[1,1]),
+    η = one(m[1,1])
+) = GaussianBeam(
+    transform(m, Γ.b; dz = dz, η = η),
+    Γ.λ,
+    transform(m, Γ.q)
+)
 
 """
 
@@ -115,6 +125,114 @@ function beamtrace(elems::Vector{<:Element}, Γ0::GaussianBeam)
     end
     return Γs
 end
+
+"""
+
+Return the complex beam parameter (usually denoted `q`) of a
+[`GaussianBeam`](@ref).
+
+$(SIGNATURES)
+
+This function is also defined (as a stub) for an
+[`AbstractBeam`](@ref) to allow other packets to provide
+implementations.
+
+!!! note
+    This method, along with most others that may seem like they make
+    sense only for a [`GaussianBeam`](@ref) is also defined for a
+    [`GeometricBeam`](@ref), returning the limit of simultaneously
+    vanishing wavelength, waist radius, and Rayleigh range. This
+    leads to reasonable return values for these methods.
+
+"""
+function beamparameter(::AbstractBeam) end
+beamparameter(beam::GaussianBeam) = beam.q
+beamparameter(beam::GeometricBeam) = complex(location(beam))
+
+"""
+
+Return the beam parameter product (usually denoted ``M^2``) of an
+[`AbstractBeam`](@ref).
+x
+$(SIGNATURES)
+
+!!! info "To Do"
+    The intention is to use this in generic implementations of
+    e.g. [`spotradius`](@ref) to make the code more reusable
+    for any package that provides a custom, concrete type derived
+    from [`AbstractBeam`](@ref). This still needs to be done.
+
+"""
+function beamparameterproduct(::AbstractBeam) end
+beamparameterproduct(::GaussianBeam{L,CL,N}) where {L,CL,N} = one(N)
+beamparameterproduct(::GeometricBeam{L,CL,N}) where {L,CL,N} = zero(N)
+
+"""
+
+Return the wavefront's radius of curvature of an
+[`AbstractBeam`](@ref) or a complex beam parameter `q`.
+
+$(SIGNATURES)
+
+"""
+wavefrontroc(beam::AbstractBeam) = wavefrontroc(beamparameter(beam))
+wavefrontroc(q) = inv(real(inv(q)))
+
+"""
+
+Return the Rayleigh range (usually denoted ``z_R``) of an
+[`AbstractBeam`](@ref) or complex [`beamparameter`](@ref).
+
+$(SIGNATURES)
+
+"""
+rayleighrange(beam::AbstractBeam) = rayleighrange(beamparameter(beam))
+rayleighrange(q) = imag(q)
+
+"""
+
+Return the waist location (usually denoted `z_0`) of an
+[`AbstractBeam`](@ref).
+
+$(SIGNATURES)
+
+!!! note
+    This method does not take care of boundaries set by
+    elements: It reports a waist location assuming that
+    there is an infinite amount of space for the beam
+    to propagate, in both forward and backward direction.
+
+!!! warning
+    Unlike the other methods that work for a [`GaussianBeam`](@ref),
+    this method is not also available for a complex
+    [`beamparameter`](@ref) as an argument. The design rationale is
+    that the complex beam parameters used in ray transfer matrix
+    analysis of Gaussian beams typically do not encode a location but
+    merely a distance from the last optical element: Use
+    [`waistdistance`](@ref) instead if you only have a complex beam
+    parameter rather than an [`AbstractBeam`](@ref).
+
+"""
+waistlocation(beam::AbstractBeam) =
+    location(beam) + waistdistance(beamparameter(beam))
+
+"""
+
+Return the distance from the current location to the free beam waist
+(usually denoted `z_0`) of an [`AbstractBeam`](@ref) or complex
+[`beamparameter`](@ref).
+
+$(SIGNATURES)
+
+!!! note
+    This method does not take care of boundaries set by
+    elements: It reports a waist location assuming that
+    there is an infinite amount of space for the beam
+    to propagate, in both forward and backward direction.
+
+"""
+waistdistance(beam::AbstractBeam) = waistdistance(beamparameter(beam))
+waistdistance(q) = -real(q)
 
 """
 

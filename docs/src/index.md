@@ -321,7 +321,14 @@ transform
 The following is implemented primarily for geometric optics (using a
 [`GeometricBeam`](@ref)) but as Gaussian (laser) optics shares the
 same implementation, it is (partially) relevant for Gaussian optics
-(using a [`GaussianBeam`](@ref)), too.
+(using a [`GaussianBeam`](@ref)), too. In particular, the original
+main functionality of this package is achieved by [`beamtrace`](@ref).
+
+!!! note
+    Unlike suggested by the section headings, the functionality for
+    [Gaussian Beams](@ref) largely works for a
+    [`GeometricBeam`](@ref) as well, in the simultaneous limits of
+    vanishing Rayleigh range, wavelength, and beam waist.
 
 ```@docs
 GeometricBeam
@@ -329,14 +336,20 @@ location
 ior
 radialpos
 slope
+discretize
+beamtrace
 ```
 
 ### Gaussian Beams
 
 ```@docs
 GaussianBeam
-beamtrace
-discretize
+beamparameter
+beamparameterproduct
+wavefrontroc
+rayleighrange
+waistlocation
+waistdistance
 spotradius
 spotradiusfunc
 ```

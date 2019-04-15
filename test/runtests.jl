@@ -52,6 +52,20 @@ end
     @test location(beam) == 0
 end
 
+@testset "GaussianBeam" begin
+    beam0 = GaussianBeam(λ = 1000e-9, w0 = w0, z0 = 0.1)
+    beam1 = transform(FreeSpace(1), beam0)
+    @test beamparameterproduct(beam0) == 1
+    @test isinf(wavefrontroc(beam)) # note beam, not beam0
+    # the following test has not been independently calculated!
+    @test wavefrontroc(beam1) ≈ 11.87 rtol = 0.005
+    @test rayleighrange(beam0) ≈ rayleighrange(beam1)
+    @test waistlocation(beam0) ≈ 0.1
+    @test waistlocation(beam1) ≈ 0.1
+    @test waistdistance(beam0) ≈ 0.1
+    @test waistdistance(beam1) ≈ -0.9
+end
+
 @testset "unitful" begin
     if haskey(Pkg.installed(), "Unitful")
         include("unitful.jl")
