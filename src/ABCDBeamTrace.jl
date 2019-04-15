@@ -4,6 +4,9 @@ export GaussianBeam, GeometricBeam
 export FreeSpace, Interface, ThinLens, Mirror, Tan, Sag
 export beamtrace, location, discretize
 export ior, radialpos, slope
+export beamparameter, beamparameterproduct
+export wavefrontroc, rayleighrange
+export waistlocation, waistdistance
 export spotradius, spotradiusfunc
 export transform
 # deprecated methods

@@ -74,7 +74,7 @@ consists.
 Note that the beam is the second argument.
 
 """
-function beamtrace(::Any, ::AbstractBeam) end
+function beamtrace(::Vector{<:Element}, ::AbstractBeam) end
 function beamtrace(elems::Vector{<:Element}, Γ0::GeometricBeam)
     Γs = Vector{GeometricBeam}(undef, length(elems)+1)
     Γs[1] = Γ0
