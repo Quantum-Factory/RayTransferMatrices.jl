@@ -8,6 +8,7 @@ export ior, radialpos, slope
 export beamparameter, beamparameterproduct
 export wavefrontroc, rayleighrange
 export waistlocation, waistdistance
+export waistradius
 export spotradius, spotradiusfunc
 export transform
 # deprecated methods
