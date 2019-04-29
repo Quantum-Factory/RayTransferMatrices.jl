@@ -27,4 +27,3 @@ introductory references:
 This package, RayTransferMatrices.jl, is an (improved) fork of
 [ABCDBeamTrace.jl](https://github.com/ngedwin98/ABCDBeamTrace.jl). It
 inherits its MIT "Expat" License.
-
