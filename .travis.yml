@@ -11,8 +11,10 @@ before_install:
 julia:
 - 1.0
 
-python:
-- 3
+addons:
+  apt:
+    packages:
+      - python3
 
 cache:
   directories:
