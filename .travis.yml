@@ -11,6 +11,9 @@ before_install:
 julia:
 - 1.0
 
+python:
+- 3
+
 cache:
   directories:
   - "$HOME/.julia"
