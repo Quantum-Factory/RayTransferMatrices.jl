@@ -391,7 +391,7 @@ using Symata
 
 Symata version     0.4.5
 Julia version      1.0.3
-Python version     3.6.7
+Python version     3.7.3
 ┌ Warning: `getindex(o::PyObject, s::Symbol)` is deprecated in favor of dot overloading (`getproperty`) so elements should now be accessed as e.g. `o.s` instead of `o[:s]`.
 │   caller = _versioninfo() at kernelstate.jl:33
 └ @ Symata ~/.julia/packages/Symata/1oDeR/src/kernelstate.jl:33
