@@ -12,7 +12,7 @@ beam](https://en.wikipedia.org/wiki/Gaussian_beam) propagation in the
 [paraxial
 approximation](https://en.wikipedia.org/wiki/Paraxial_approximation).
 
-![](plots-02.svg)
+![](https://quantum-factory.de/open-source/RayTransferMatrices.jl/plots-02.svg)
 
 The following introduction to the package assumes familiarity with the
 ABCD formalism and its utility in optical analysis and design.  In
