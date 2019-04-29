@@ -7,16 +7,11 @@ before_install:
 - echo '|1|tCbF6ylipISewwuZfzDbsw623ic=|zj/fFRcWw7BfUrYvl0pTSmSfqNQ= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAGp1W0jQ217mdjE0OvggNr/wg9kHYYgmlTcA/ObLKN5bCtPpMJGDdm/vAYbSFaBtHHiOAQQmPg6LejJuOhk7Zo=' >>$HOME/.ssh/known_hosts
 - echo '|1|jKCOWAH9yrDZ3ey2kQewgzuMjvc=|tivCVhqU7PCYU6Sz6AAAPN735/c= ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDypicw6GdbqBGMXgcrXoxRNUyOJWRBzv06a2TMlO7fQ34OSiekvBcJue7HLnFNYUpqlr7SHKynK8OcP8pFMntJEoDgIboWuFCphZhzEfBSjpryNF/Cp8jpF4vswi42FpbWCsooGn9NuXmW0isoCWQVEz73412gSvFnbgG/s8JSf21wlVl1yUDBI6m5btrikhGU34movU/3qQy44x/02pvBVAenTaSfH2IyjayUpr7vb0fF/inNCebmDAKitJ5vbfmVuoCYcZ0P+KSuR7XjVuFa2SbS5AJbUwKRj31tw4Fd1I1yii3XBKYm5DygkVCSIfTvu7Qi/B4nE97RymtSp5cr' >>$HOME/.ssh/known_hosts
 - ssh-add $HOME/.ssh/id_rsa
+- pyenv global 3.6
 - pip3 install sympy
 
 julia:
 - 1.0
-
-addons:
-  apt:
-    packages:
-      - python3
-      - python3-pip
       
 cache:
   directories:
