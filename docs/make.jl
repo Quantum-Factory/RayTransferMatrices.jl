@@ -2,6 +2,7 @@ import Pkg;
 # use a separate Project for building docs; see
 # https://discourse.julialang.org/t/psa-use-a-project-for-building-your-docs/14974
 Pkg.activate("docs")
+Pkg.instantiate()
 
 # to find parent package when executing this file using
 # `include("docs/make.jl")`
