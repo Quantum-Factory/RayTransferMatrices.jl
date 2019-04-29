@@ -110,7 +110,7 @@ gob = GeometricBeam(x = x_gob, n = n_gob, slope = k_gob)
             plot(system, GaussianBeam(λ=405e-9, w0=1e-3), xlims=(L+0.98f, L+1.02f), ylims=(-20e-6,20e-6), aspect_ratio=:none)
             savefig(fname)
         end
-        @visualtest makeplot "data/testimg.png" false
+        @visualtest makeplot "data/testimg.png" false 0.04
     end
 end
 
