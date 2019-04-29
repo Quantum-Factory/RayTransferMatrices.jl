@@ -16,6 +16,9 @@ addons:
     packages:
       - python3
 
+after_install:
+- pip3 install sympy
+
 cache:
   directories:
   - "$HOME/.julia"
