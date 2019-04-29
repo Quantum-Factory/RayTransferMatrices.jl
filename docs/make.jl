@@ -18,18 +18,22 @@ end
 
 using Documenter, RayTransferMatrices
 
-makedocs(
-    sitename = "RayTransferMatrices",
-    format = Documenter.HTML(
-        prettyurls = false # put everything in one file
-    ),
-    # Uncomment the following only when you know what you're
-    # doing!  (it will make all doctests pass by overwritting
-    # the expected output)
-    #doctest = :fix,
-    modules = [RayTransferMatrices],
-    strict = true
-)
+try
+    makedocs(
+        sitename = "RayTransferMatrices",
+        format = Documenter.HTML(
+            prettyurls = false # put everything in one file
+        ),
+        # Uncomment the following only when you know what you're
+        # doing!  (it will make all doctests pass by overwritting
+        # the expected output)
+        #doctest = :fix,
+        modules = [RayTransferMatrices],
+        strict = true
+    )
+catch e
+end
+
 # if necessary, repeat the document generation because the example
 # code for Symata.jl only works on the second iteration
 makedocs(
