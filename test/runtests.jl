@@ -2,6 +2,14 @@ using RayTransferMatrices
 using Test
 import Pkg
 
+# import test dependencies
+Pkg.add("Plots")
+Pkg.add("ImageMagick")
+Pkg.add("VisualRegressionTests")
+Pkg.instantiate()
+using Plots
+using VisualRegressionTests
+
 # general test setup
 f = 100e-3
 L = 1000e-3
@@ -92,4 +100,21 @@ gob = GeometricBeam(x = x_gob, n = n_gob, slope = k_gob)
             )
         end
     end
+    @testset "plots" begin
+        function makeplot(fname::String)
+            f = 50e-3
+            L = 1.0
+            system = [
+                FreeSpace(L), ThinLens(f=f), FreeSpace(0.98f), FreeSpace(0.04f)
+            ]
+            plot(system, GaussianBeam(λ=405e-9, w0=1e-3), xlims=(L+0.98f, L+1.02f), ylims=(-20e-6,20e-6), aspect_ratio=:none)
+            savefig(fname)
+        end
+        @visualtest makeplot "data/testimg.png" false 0.04
+    end
 end
+
+# remove test dependencies
+Pkg.rm("Plots")
+Pkg.rm("ImageMagick")
+Pkg.rm("VisualRegressionTests")
