@@ -1,6 +1,6 @@
-# ABCDBeamTrace.jl
+# RayTransferMatrices.jl
 ```@meta
-CurrentModule = ABCDBeamTrace
+CurrentModule = RayTransferMatrices
 ```
 
 A Julia package for performing calculations with the [ray transfer
@@ -15,6 +15,8 @@ approximation](https://en.wikipedia.org/wiki/Paraxial_approximation). A
 concise if incomplete introduction can also be found at [the RP
 Photonics
 Encyclopedia](https://www.rp-photonics.com/abcd_matrix.html).
+
+![](plots-02.svg)
 
 The following introduction to the package assumes familiarity with the
 ABCD formalism and its utility in optical analysis and design.  In
@@ -33,11 +35,15 @@ introductory references:
     for more clarity and less potential for error).
 
 ## Installation
-This package is not yet registered.  It can be installed in Julia with the following:
+
+This package is not yet registered.  It can be installed at the Julia
+prompt with the following input:
+
 ```julia
-Pkg.clone("git://github.com/ngedwin98/ABCDBeamTrace.jl.git")
+] add "git://github.com/Quantum-Factory/RayTransferMatrices.jl.git"
 ```
-The code currently requires Julia `v1.0` or higher. It has been tested with `v1.1`.
+
+The code currently requires Julia `v1.0` or higher.
 
 ## Optical elements
 This section discusses how we represent the ABCD model of optical elements and how to access their standard representation as numerical ray transfer matrices.
@@ -55,13 +61,13 @@ There are some additional optical elements which are physically distinct but whi
 ### Optical systems
 An optical system in the ABCD formalism is a cascade of optical elements, represented in this package as `Vector{<:Element}`.  For example, to construct a [Keplerian 2x beam expander](https://www.edmundoptics.com/resources/application-notes/lasers/beam-expanders/) with objective focal length represented by `f::Real`, we can use
 ```jldoctest usage
-using ABCDBeamTrace
+using RayTransferMatrices
 f=125e-3
 expander_2x = [ThinLens(f=f), FreeSpace(3f), ThinLens(f=2f)]
 
 # output
 
-3-element Array{ABCDBeamTrace.Element{Float64,Float64},1}:
+3-element Array{RayTransferMatrices.Element{Float64,Float64},1}:
  ThinLens{Float64,Float64}(0.125, 0.0)
  FreeSpace{Float64,Float64}(0.375)
  ThinLens{Float64,Float64}(0.25, 0.0)
@@ -78,7 +84,7 @@ system = [expander_2x; FreeSpace(L); reverse(expander_2x)]
 
 # output
 
-7-element Array{ABCDBeamTrace.Element{Float64,Float64},1}:
+7-element Array{RayTransferMatrices.Element{Float64,Float64},1}:
  ThinLens{Float64,Float64}(0.125, 0.0)
  FreeSpace{Float64,Float64}(0.375)
  ThinLens{Float64,Float64}(0.25, 0.0)
@@ -197,7 +203,7 @@ axis, beam waist radii, etc. A few examples follow:
     the beam parameter.
 
 ```jldoctest
-using ABCDBeamTrace, Unitful
+using RayTransferMatrices, Unitful
 using Unitful: nm, µm, mm, cm, m
 f = 125mm
 L = 50cm
@@ -221,7 +227,7 @@ exampe, to plot a laser beam's ``1/e^2`` full diameter, use the
 following:
 
 ```@example
-using ABCDBeamTrace, Plots
+using RayTransferMatrices, Plots
 f = 10e-3 # focal length of 10 mm in SI base units (m)
 L = 20e-3 # distance of 20 mm (SI) betweeen sub systems
 expander_2x = [ThinLens(f=f), FreeSpace(3f), ThinLens(f=2f)]
@@ -244,7 +250,7 @@ code generating a plot of three beams of different wavelengths near
 the focus of a lens and exaggerates the beam width:
 
 ```@example
-using ABCDBeamTrace, Plots
+using RayTransferMatrices, Plots
 using Unitful: nm, µm, mm, m
 f = 50mm
 L = 1000mm
@@ -303,7 +309,7 @@ constraint of given positions of the waists (i.e. a given total
 optical path length):
 
 ```@example sympy-modematching
-using ABCDBeamTrace, SymPy
+using RayTransferMatrices, SymPy
 @vars z1 positive=true # SymPy variable for position of lens with f1
 @vars z2z1 positive=true # SymPy var. for distance between lenses
 z2 = z1 + z2z1 # position of lens with f2
@@ -384,7 +390,7 @@ using Symata
 # output
 
 Symata version     0.4.5
-Julia version      1.1.0
+Julia version      1.0.3
 Python version     3.6.7
 ┌ Warning: `getindex(o::PyObject, s::Symbol)` is deprecated in favor of dot overloading (`getproperty`) so elements should now be accessed as e.g. `o.s` instead of `o[:s]`.
 │   caller = _versioninfo() at kernelstate.jl:33
@@ -417,7 +423,7 @@ distance `L` between them is a variable. Continuing from the
 definition of `Base.one` and `Base.zero` above:
 
 ```@example symata
-using ABCDBeamTrace
+using RayTransferMatrices
 # 100 mm radius of curvature corresponding to 50 mm focal length
 roc = 100e-3
 # variable distance between mirrors (cavity length)

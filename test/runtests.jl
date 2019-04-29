@@ -1,4 +1,4 @@
-using ABCDBeamTrace
+using RayTransferMatrices
 using Test
 import Pkg
 

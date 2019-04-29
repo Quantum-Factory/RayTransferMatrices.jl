@@ -35,13 +35,13 @@ function GaussianBeam(
     if zero(one(n)) != zero(n)
         throw(DomainError("n must be dimensionless"))
     end
-    if isnothing(w0) == isnothing(q)
+    if (nothing === w0) == (nothing === q)
         throw(DomainError("either q or w0 must be specified"))
     end
-    if (z0 != zero(λ)) && !isnothing(q)
+    if (z0 != zero(λ)) && (q !== nothing)
         throw(DomainError("q and z0 cannot both be specified"))
     end
-    if isnothing(w0)
+    if nothing === w0
         rr = rayleighrange(q)
         w0 = sqrt(rr * λ / (π * n))
         z0 = waistdistance(q)
@@ -317,7 +317,7 @@ invalid, i.e. has no (real and finite) spotradius.
 """
 function spotradius(Γ::GaussianBeam; none = :error)
     wsquared = -Γ.λ / (π * ior(Γ) * imag(inv(beamparameter(Γ))))
-    if isnothing(none) || none !== :error
+    if (none === nothing) || none !== :error
         # return a custom value if there is no spotradius, rather than
         # the DomainError that would normally result (but only if the
         # result is numeric, i.e. wsquared is a Number, as isless will
@@ -351,7 +351,7 @@ function spotradiusfunc(elements, beam::GaussianBeam; outside=nothing)
             z < location(beams[1]) ||
             z > location(beams[length(beams)])
         )    
-            if isnothing(outside)
+            if outside === nothing
                 throw(DomainError(string(
                     "system does not cover ",
                     "the requested beam position"

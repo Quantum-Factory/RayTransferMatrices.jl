@@ -15,19 +15,15 @@ if !("../.." in LOAD_PATH)
     push!(LOAD_PATH, "../..")
 end
 
-using Documenter, ABCDBeamTrace
+using Documenter, RayTransferMatrices
 
 # if necessary, repeat the document generation because the example
-# code for Symata.jl only works on the second iteration; add a third
-# run that won't fail (not in strict mode) to aid debugging
-# documentation
-for i = 1:3
-    bestrict = i < 3
-    local docsbuilt
+# code for Symata.jl only works on the second iteration
+for i = 1:2
     try
         @info "Starting document build process"
         makedocs(
-            sitename = "ABCDBeamTrace",
+            sitename = "RayTransferMatrices",
             format = Documenter.HTML(
                 prettyurls = false # put everything in one file
             ),
@@ -35,24 +31,21 @@ for i = 1:3
             # doing!  (it will make all doctests pass by overwritting
             # the expected output)
             #doctest = :fix,
-            modules = [ABCDBeamTrace],
-            strict = bestrict
+            modules = [RayTransferMatrices],
+            strict = true
         )
     catch error
-        @error "Documentation build process failed with error" error
+        @info "Documentation build process failed with error" error
     end
     docsbuilt = isfile("docs/build/index.html")
     if docsbuilt
         break
     else
         if i == 1
-            @info "Rebuilding docs because first attempt failed"
-        elseif i == 2
-            @warn string(
-                "Turning off strict mode: ",
-                "The documentation has a problem!"
+            @info string(
+                "Rebuilding docs because first attempt failed ",
+                "(which is currently expected)"
             )
-            bestrict = false
         end
     end
 end

@@ -1,4 +1,4 @@
-module ABCDBeamTrace
+module RayTransferMatrices
 
 export GaussianBeam, GeometricBeam
 export FreeSpace, Interface, ThinLens, Mirror, Tan, Sag
