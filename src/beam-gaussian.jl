@@ -191,7 +191,7 @@ function beamparameter(m::Matrix)
     re_inv_q = (D-A) / (2B)
     im_inv_q = sqrt(4 - (A + D)^2) / (2B)
     # decide sign in re_inv_q ± im_inv_q by which leads to a real
-    # beam width (see remark after Eq. 46): im_inv_q > 0
+    # beam width (see remark after Eq. 46): im_inv_q < 0
     inv_q = complex(re_inv_q, -abs(im_inv_q))
     return inv(inv_q)
 end
