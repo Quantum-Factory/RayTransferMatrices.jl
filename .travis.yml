@@ -19,7 +19,7 @@ cache:
   - "$HOME/.julia"
 
 script:
-- export GKSwstype=100 && export GRDIR="" && julia --color=yes -e "using Pkg; Pkg.build(); Pkg.test(coverage=true)" && julia --color=yes docs/make.jl && julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
+- export CODECOV_TOKEN="024ee8d6-9ca6-4fb1-991a-b46e44acd133" && export GKSwstype=100 && export GRDIR="" && julia --color=yes -e "using Pkg; Pkg.build(); Pkg.test(coverage=true)" && julia --color=yes docs/make.jl && julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
 
 deploy:
   skip_cleanup: true
