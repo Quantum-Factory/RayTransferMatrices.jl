@@ -77,6 +77,22 @@ gob = GeometricBeam(x = x_gob, n = n_gob, slope = k_gob)
         # construct a GaussianBeam from the beam parameter (q) of another
         q = beamparameter(beam1)
         @test beamparameter(GaussianBeam(λ = 1000e-9, q = q)) ≈ q
+        # calculate the beam parameter of a cacity mode, in SI unis,
+        # following an example from
+        # https://courses.engr.illinois.edu/ece455/fa2017/Files/Galvinlectures/02_CavityModes.pdf
+        cavityroundtrip = [
+            Mirror(roc = 400e-2),
+            FreeSpace(50e-2),
+            Mirror(roc = 300e-2),
+            FreeSpace(50e-2)
+        ]
+        @test rayleighrange(beamparameter(cavityroundtrip)) ≈
+            88.88e-2 atol=0.005e-2
+        @test waistradius(GaussianBeam(
+            λ = 500e-9, q = beamparameter(cavityroundtrip)
+        )) ≈ 376e-6 atol=0.5e-6
+        @test waistdistance(beamparameter(cavityroundtrip)) ≈
+            20.83e-2 atol=0.005e-2
     end
     @testset "Elements" begin
         @testset "ElementABCD" begin
