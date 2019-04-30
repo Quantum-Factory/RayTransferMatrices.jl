@@ -3,6 +3,7 @@ using Test
 import Pkg
 
 # import test dependencies
+Pkg.add("Unitful")
 Pkg.add("Plots")
 Pkg.add("ImageMagick")
 Pkg.add("VisualRegressionTests")
@@ -107,14 +108,7 @@ gob = GeometricBeam(x = x_gob, n = n_gob, slope = k_gob)
         end
     end
     @testset "unitful" begin
-        if haskey(Pkg.installed(), "Unitful")
-            include("unitful.jl")
-        else
-            @warn string(
-                "Skipping Unitful Tests because ",
-                "package Unitful is not installed"
-            )
-        end
+        include("unitful.jl")
     end
     @testset "plots" begin
         function makeplot(fname::String)
@@ -131,6 +125,7 @@ gob = GeometricBeam(x = x_gob, n = n_gob, slope = k_gob)
 end
 
 # remove test dependencies
+Pkg.rm("Unitful")
 Pkg.rm("Plots")
 Pkg.rm("ImageMagick")
 Pkg.rm("VisualRegressionTests")
